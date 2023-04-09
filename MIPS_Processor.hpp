@@ -23,6 +23,7 @@ struct MIPS_Architecture
 	std::unordered_map<std::string, int> registerMap, address;
 	static const int MAX = (1 << 20);
 	int data[MAX >> 2] = {0};
+	std::unordered_map<int, int> memoryDelta;
 	std::vector<std::vector<std::string>> commands;
 	std::vector<int> commandCount;
 	enum exit_code
@@ -163,6 +164,8 @@ struct MIPS_Architecture
 		int address = locateAddress(location);
 		if (address < 0)
 			return abs(address);
+		if (data[address] != registers[registerMap[r]])
+			memoryDelta[address] = registers[registerMap[r]];
 		data[address] = registers[registerMap[r]];
 		PCnext = PCcurr + 1;
 		return 0;
@@ -279,20 +282,6 @@ struct MIPS_Architecture
 				std::cerr << s << ' ';
 			std::cerr << '\n';
 		}
-		std::cout << "\nFollowing are the non-zero data values:\n";
-		for (int i = 0; i < MAX / 4; ++i)
-			if (data[i] != 0)
-				std::cout << 4 * i << '-' << 4 * i + 3 << std::hex << ": " << data[i] << '\n'
-						  << std::dec;
-		std::cout << "\nTotal number of cycles: " << cycleCount << '\n';
-		std::cout << "Count of instructions executed:\n";
-		for (int i = 0; i < (int)commands.size(); ++i)
-		{
-			std::cout << commandCount[i] << " times:\t";
-			for (auto &s : commands[i])
-				std::cout << s << ' ';
-			std::cout << '\n';
-		}
 	}
 
 	// parse the command assuming correctly formatted MIPS instruction (or label)
@@ -392,19 +381,21 @@ struct MIPS_Architecture
 			}
 			++commandCount[PCcurr];
 			PCcurr = PCnext;
-			printRegisters(clockCycles);
+			printRegistersAndMemoryDelta(clockCycles);
 		}
 		handleExit(SUCCESS, clockCycles);
 	}
 
 	// print the register data in hexadecimal
-	void printRegisters(int clockCycle)
+	void printRegistersAndMemoryDelta(int clockCycle)
 	{
-		std::cout << "Cycle number: " << clockCycle << '\n'
-				  << std::hex;
 		for (int i = 0; i < 32; ++i)
 			std::cout << registers[i] << ' ';
-		std::cout << std::dec << '\n';
+		std::cout << '\n';
+		std::cout << memoryDelta.size() << ' ';
+		for (auto &p : memoryDelta)
+			std::cout << p.first << ' ' << p.second << '\n';
+		memoryDelta.clear();
 	}
 };
 
