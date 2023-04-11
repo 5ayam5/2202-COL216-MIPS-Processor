@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <bitset>
+#include <cassert>
 
 struct BranchPredictor {
     virtual bool predict(uint32_t pc) = 0;
@@ -24,8 +25,9 @@ struct SaturatingBranchPredictor : public BranchPredictor {
 };
 
 struct BHRBranchPredictor : public BranchPredictor {
-    std::vector<std::bitset<2>> bhr;
-    BHRBranchPredictor(int value) : bhr(1 << 2, value) {}
+    std::vector<std::bitset<2>> bhrTable;
+    std::bitset<2> bhr;
+    BHRBranchPredictor(int value) : bhrTable(1 << 2, value), bhr(value) {}
 
     bool predict(uint32_t pc) {
         // your code here
@@ -38,10 +40,11 @@ struct BHRBranchPredictor : public BranchPredictor {
 };
 
 struct SaturatingBHRBranchPredictor : public BranchPredictor {
-    std::vector<std::bitset<2>> bhr;
+    std::vector<std::bitset<2>> bhrTable;
+    std::bitset<2> bhr;
     std::vector<std::bitset<2>> table;
     std::vector<std::bitset<2>> combination;
-    SaturatingBHRBranchPredictor(int value, int size) : bhr(1 << 2, value), table(1 << 14, value), combination(size, value) {
+    SaturatingBHRBranchPredictor(int value, int size) : bhrTable(1 << 2, value), bhr(value), table(1 << 14, value), combination(size, value) {
         assert(size <= (1 << 16));
     }
 
